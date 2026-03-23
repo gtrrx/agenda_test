@@ -1,4 +1,4 @@
-const dias = ["segunda","terca","quarta","quinta","sexta","sabado","domingo"];
+const dias = ["segunda", "terca", "quarta", "quinta", "sexta", "sabado", "domingo"];
 
 // Obter dados
 function obterDados() {
@@ -26,8 +26,11 @@ function adicionarTarefa() {
 
     let dados = obterDados();
 
+    let dificuldade = document.getElementById("dificuldade").value;
+
     dados[dia].push({
         texto: texto,
+        dificuldade: dificuldade,
         concluida: false
     });
 
@@ -81,7 +84,7 @@ function criarItem(tarefa, dia, index) {
     }
 
     let texto = document.createElement("span");
-    texto.textContent = tarefa.texto;
+    texto.textContent = tarefa.texto + " (" + tarefa.dificuldade + ")";
 
     let botoes = document.createElement("div");
     botoes.className = "botoes";
@@ -127,7 +130,7 @@ function excluirTarefa(dia, index) {
 function mostrarHoje() {
     let hoje = new Date().getDay();
 
-    let mapa = ["domingo","segunda","terca","quarta","quinta","sexta","sabado"];
+    let mapa = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"];
     let diaAtual = mapa[hoje];
 
     document.getElementById("hojeTitulo").textContent =
@@ -163,7 +166,7 @@ function importarDados(event) {
 
     let leitor = new FileReader();
 
-    leitor.onload = function(e) {
+    leitor.onload = function (e) {
         localStorage.setItem("planner", e.target.result);
         atualizarTela();
     };
