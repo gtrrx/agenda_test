@@ -173,3 +173,19 @@ function importarDados(event) {
 
 // Inicializar
 atualizarTela();
+
+// Alternar tema
+function toggleTema() {
+    document.body.classList.toggle("dark");
+
+    let tema = document.body.classList.contains("dark") ? "dark" : "light";
+    localStorage.setItem("tema", tema);
+}
+
+// carregar tema salvo
+(function () {
+    let tema = localStorage.getItem("tema");
+    if (tema === "dark") {
+        document.body.classList.add("dark");
+    }
+})();

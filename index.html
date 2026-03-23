@@ -1,52 +1,57 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="style.css">
     <title>Document</title>
 </head>
+
 <body>
+
+    <button onclick="toggleTema()">🌙 Alternar Tema</button>
 
     <div class="container">
 
-<h2>Planner Semanal</h2>
+        <h2>Planner Semanal</h2>
 
-<!-- HOJE -->
-<h3 id="hojeTitulo"></h3>
-<ul id="listaHoje"></ul>
+        <!-- HOJE -->
+        <h3 id="hojeTitulo"></h3>
+        <ul id="listaHoje"></ul>
 
-<hr>
+        <hr>
 
-<!-- ADICIONAR -->
-<input type="text" id="entradaTarefa" placeholder="Digite a tarefa">
+        <!-- ADICIONAR -->
+        <input type="text" id="entradaTarefa" placeholder="Digite a tarefa">
 
-<select id="diaSemana">
-    <option value="segunda">Segunda</option>
-    <option value="terca">Terça</option>
-    <option value="quarta">Quarta</option>
-    <option value="quinta">Quinta</option>
-    <option value="sexta">Sexta</option>
-    <option value="sabado">Sábado</option>
-    <option value="domingo">Domingo</option>
-</select>
+        <select id="diaSemana">
+            <option value="segunda">Segunda</option>
+            <option value="terca">Terça</option>
+            <option value="quarta">Quarta</option>
+            <option value="quinta">Quinta</option>
+            <option value="sexta">Sexta</option>
+            <option value="sabado">Sábado</option>
+            <option value="domingo">Domingo</option>
+        </select>
 
-<button onclick="adicionarTarefa()">Adicionar Tarefa</button>
+        <button onclick="adicionarTarefa()">Adicionar Tarefa</button>
 
-<hr>
+        <hr>
 
-<!-- SEMANA -->
-<div class="linha" id="semana"></div>
+        <!-- SEMANA -->
+        <div class="linha" id="semana"></div>
 
-<hr>
+        <hr>
 
-<button onclick="exportarDados()">Exportar Backup</button>
-<input type="file" onchange="importarDados(event)">
+        <button onclick="exportarDados()">Exportar Backup</button>
+        <input type="file" onchange="importarDados(event)">
 
-</div>
+    </div>
 
-<script src="script.js"></script>
+    <script src="script.js"></script>
 
-    
+
 </body>
+
 </html>
