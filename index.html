@@ -10,54 +10,63 @@
 
 <body>
 
-    <button onclick="toggleTema()">🌙 Alternar Tema</button>
-
     <div class="container">
 
-        <h2>Planner Semanal</h2>
+        <!-- TELA PRINCIPAL -->
+        <div id="telaPrincipal">
 
-        <!-- HOJE -->
-        <h3 id="hojeTitulo"></h3>
-        <ul id="listaHoje"></ul>
+            <h2>Hoje você precisa fazer</h2>
+            <h2 id="hojeTitulo"></h2>
+            <ul id="listaHoje"></ul>
 
-        <hr>
+            <button onclick="abrirPlanejamento()">📅 Ver Planejamento</button>
 
-        <!-- ADICIONAR -->
-        <input type="text" id="entradaTarefa" placeholder="Digite a tarefa">
+        </div>
 
-        <select id="diaSemana">
-            <option value="segunda">Segunda</option>
-            <option value="terca">Terça</option>
-            <option value="quarta">Quarta</option>
-            <option value="quinta">Quinta</option>
-            <option value="sexta">Sexta</option>
-            <option value="sabado">Sábado</option>
-            <option value="domingo">Domingo</option>
-        </select>
+        <!-- TELA PLANEJAMENTO -->
+        <div id="telaPlanejamento" style="display:none;">
 
-        <select id="dificuldade">
-            <option value="facil">Fácil</option>
-            <option value="medio">Médio</option>
-            <option value="dificil">Difícil</option>
-        </select>
+            <h2>Planejamento Semanal</h2>
 
-        <button onclick="adicionarTarefa()">Adicionar Tarefa</button>
+            <button onclick="voltarInicio()">⬅ Voltar</button>
 
-        <hr>
+            <input type="text" id="entradaTarefa" placeholder="Digite a tarefa">
 
-        <!-- SEMANA -->
-        <div class="linha" id="semana"></div>
+            <select id="diaSemana">
+                <option value="segunda">Segunda</option>
+                <option value="terca">Terça</option>
+                <option value="quarta">Quarta</option>
+                <option value="quinta">Quinta</option>
+                <option value="sexta">Sexta</option>
+                <option value="sabado">Sábado</option>
+                <option value="domingo">Domingo</option>
+            </select>
 
-        <hr>
+            <!-- NOVA CATEGORIA -->
+            <select id="categoria">
+                <option value="pesquisa">Pesquisa</option>
+                <option value="atividades">Atividades</option>
+                <option value="prova">Prova</option>
+                <option value="trabalho">Trabalho</option>
+                <option value="redacao">Redação/Textos</option>
+            </select>
 
-        <button onclick="exportarDados()">Exportar Backup</button>
-        <input type="file" onchange="importarDados(event)">
+            <!-- DIFICULDADE -->
+            <select id="dificuldade">
+                <option value="facil">Fácil</option>
+                <option value="medio">Médio</option>
+                <option value="dificil">Difícil</option>
+            </select>
+
+            <button onclick="adicionarTarefa()">Adicionar Tarefa</button>
+
+            <div class="linha" id="semana"></div>
+
+        </div>
 
     </div>
 
-    <script src="script.js"></script>
-
-
 </body>
+<script src="script.js"></script>
 
 </html>

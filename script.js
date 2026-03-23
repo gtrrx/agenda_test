@@ -1,6 +1,10 @@
 const dias = ["segunda", "terca", "quarta", "quinta", "sexta", "sabado", "domingo"];
+const LIMITE_TAREFAS_DIA = 3;
 
-// Obter dados
+// ==========================
+// DADOS
+// ==========================
+
 function obterDados() {
     let dados = JSON.parse(localStorage.getItem("planner"));
 
@@ -12,36 +16,113 @@ function obterDados() {
     return dados;
 }
 
-// Salvar
 function salvarDados(dados) {
     localStorage.setItem("planner", JSON.stringify(dados));
 }
 
-// Adicionar tarefa
+// ==========================
+// LÓGICA DE DISTRIBUIÇÃO
+// ==========================
+
+function encontrarDiaDisponivel(dados, diaInicial) {
+    let indice = dias.indexOf(diaInicial);
+
+    for (let i = 0; i < 7; i++) {
+        let diaAtual = dias[(indice + i) % 7];
+
+        if (dados[diaAtual].length < LIMITE_TAREFAS_DIA) {
+            return diaAtual;
+        }
+    }
+
+    return diaInicial;
+}
+
+// ==========================
+// ADICIONAR TAREFA
+// ==========================
+
 function adicionarTarefa() {
-    let texto = document.getElementById("entradaTarefa").value;
+    let input = document.getElementById("entradaTarefa");
+    let texto = input.value.trim();
     let dia = document.getElementById("diaSemana").value;
+    let dificuldade = document.getElementById("dificuldade").value;
+    let categoria = document.getElementById("categoria").value;
 
     if (!texto) return;
 
     let dados = obterDados();
+    let indiceDia = dias.indexOf(dia);
 
-    let dificuldade = document.getElementById("dificuldade").value;
+    // 🔹 PESQUISA e ATIVIDADES (simples)
+    if (categoria === "pesquisa" || categoria === "atividades") {
 
-    dados[dia].push({
-        texto: texto,
-        dificuldade: dificuldade,
-        concluida: false
-    });
+        let diaFinal = encontrarDiaDisponivel(dados, dia);
+
+        dados[diaFinal].push({
+            texto: texto,
+            categoria: categoria,
+            dificuldade: dificuldade,
+            concluida: false
+        });
+    }
+
+    // 🔹 PROVA (dividir estudo)
+    else if (categoria === "prova") {
+
+        let etapas = [
+            "Estudar conteúdo",
+            "Fazer exercícios",
+            "Revisão final"
+        ];
+
+        etapas.forEach((etapa, i) => {
+            let diaBase = dias[(indiceDia + i) % 7];
+            let diaAtual = encontrarDiaDisponivel(dados, diaBase);
+
+            dados[diaAtual].push({
+                texto: texto + " - " + etapa,
+                categoria: categoria,
+                dificuldade: dificuldade,
+                concluida: false
+            });
+        });
+    }
+
+    // 🔹 TRABALHO e REDAÇÃO
+    else if (categoria === "trabalho" || categoria === "redacao") {
+
+        let etapas = [
+            "Pesquisa",
+            "Produção",
+            "Revisão"
+        ];
+
+        etapas.forEach((etapa, i) => {
+            let diaBase = dias[(indiceDia + i) % 7];
+            let diaAtual = encontrarDiaDisponivel(dados, diaBase);
+
+            dados[diaAtual].push({
+                texto: texto + " - " + etapa,
+                categoria: categoria,
+                dificuldade: dificuldade,
+                concluida: false
+            });
+        });
+    }
 
     salvarDados(dados);
 
-    document.getElementById("entradaTarefa").value = "";
+    input.value = "";
+    input.focus();
 
     atualizarTela();
 }
 
-// Atualizar tela
+// ==========================
+// TELA
+// ==========================
+
 function atualizarTela() {
     mostrarSemana();
     mostrarHoje();
@@ -59,7 +140,12 @@ function mostrarSemana() {
         div.className = "coluna";
 
         let titulo = document.createElement("h4");
-        titulo.textContent = dia.toUpperCase();
+
+        if (dados[dia].length >= LIMITE_TAREFAS_DIA) {
+            titulo.textContent = dia.toUpperCase() + " ⚠";
+        } else {
+            titulo.textContent = dia.toUpperCase();
+        }
 
         let ul = document.createElement("ul");
 
@@ -82,6 +168,8 @@ function criarItem(tarefa, dia, index) {
     if (tarefa.concluida) {
         li.classList.add("concluida");
     }
+
+    li.classList.add(tarefa.categoria);
 
     let texto = document.createElement("span");
     texto.textContent = tarefa.texto + " (" + tarefa.dificuldade + ")";
@@ -106,7 +194,10 @@ function criarItem(tarefa, dia, index) {
     return li;
 }
 
-// Concluir tarefa
+// ==========================
+// AÇÕES
+// ==========================
+
 function toggleConcluida(dia, index) {
     let dados = obterDados();
 
@@ -116,7 +207,6 @@ function toggleConcluida(dia, index) {
     atualizarTela();
 }
 
-// Excluir tarefa
 function excluirTarefa(dia, index) {
     let dados = obterDados();
 
@@ -126,7 +216,10 @@ function excluirTarefa(dia, index) {
     atualizarTela();
 }
 
-// Mostrar hoje
+// ==========================
+// HOJE (FOCO PRINCIPAL)
+// ==========================
+
 function mostrarHoje() {
     let hoje = new Date().getDay();
 
@@ -147,7 +240,10 @@ function mostrarHoje() {
     });
 }
 
-// Exportar
+// ==========================
+// BACKUP
+// ==========================
+
 function exportarDados() {
     let dados = localStorage.getItem("planner");
 
@@ -159,7 +255,6 @@ function exportarDados() {
     link.click();
 }
 
-// Importar
 function importarDados(event) {
     let arquivo = event.target.files[0];
     if (!arquivo) return;
@@ -174,10 +269,10 @@ function importarDados(event) {
     leitor.readAsText(arquivo);
 }
 
-// Inicializar
-atualizarTela();
+// ==========================
+// TEMA
+// ==========================
 
-// Alternar tema
 function toggleTema() {
     document.body.classList.toggle("dark");
 
@@ -185,10 +280,27 @@ function toggleTema() {
     localStorage.setItem("tema", tema);
 }
 
-// carregar tema salvo
 (function () {
     let tema = localStorage.getItem("tema");
     if (tema === "dark") {
         document.body.classList.add("dark");
     }
 })();
+
+
+// TELAS
+function abrirPlanejamento() {
+    document.getElementById("telaPrincipal").style.display = "none";
+    document.getElementById("telaPlanejamento").style.display = "block";
+
+    atualizarTela(); // garante atualização
+}
+
+function voltarInicio() {
+    document.getElementById("telaPrincipal").style.display = "block";
+    document.getElementById("telaPlanejamento").style.display = "none";
+
+    mostrarHoje(); // atualiza só o hoje
+}
+
+atualizarTela();
