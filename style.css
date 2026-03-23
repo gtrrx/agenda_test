@@ -86,3 +86,8 @@ body.dark button {
 .prova { border-left: 5px solid #F44336; }
 .trabalho { border-left: 5px solid #9C27B0; }
 .redacao { border-left: 5px solid #FF9800; }
+
+
+input[type="date"] {
+    cursor: pointer;
+}
