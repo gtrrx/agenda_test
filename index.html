@@ -1,68 +1,74 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="style.css">
-    <title>Document</title>
+    <title>Planner Inteligente</title>
 </head>
 
 <body>
 
-    <div class="container">
+<div class="container">
 
-        <!-- TELA PRINCIPAL -->
-        <div id="telaPrincipal">
+    <!-- TELA PRINCIPAL -->
+    <div id="telaPrincipal">
+        <h2 id="hojeTitulo"></h2>
+        <ul id="listaHoje"></ul>
 
-            <h2>Hoje você precisa fazer</h2>
-            <h2 id="hojeTitulo"></h2>
-            <ul id="listaHoje"></ul>
+        <button onclick="abrirPlanejamento()">📅 Planejamento</button>
+        <button onclick="abrirPendencias()">⚠ Pendências</button>
+        <button onclick="toggleTema()">🌙 Tema</button>
 
-            <button onclick="abrirPlanejamento()">📅 Ver Planejamento</button>
-            <button onclick="toggleTema()">🌙 Tema</button>
-
-            <button onclick="exportarDados()">Exportar Backup</button>
-
-            <input type="file" onchange="importarDados(event)">
-
-        </div>
-
-        <!-- TELA PLANEJAMENTO -->
-        <div id="telaPlanejamento" style="display:none;">
-
-            <h2>Planejamento Semanal</h2>
-
-            <button onclick="voltarInicio()">⬅ Voltar</button>
-
-            <input type="text" id="entradaTarefa" placeholder="Digite a tarefa">
-            <input type="date" id="dataEntrega">
-
-            <!-- NOVA CATEGORIA -->
-            <select id="categoria">
-                <option value="pesquisa">Pesquisa</option>
-                <option value="atividades">Atividades</option>
-                <option value="prova">Prova</option>
-                <option value="trabalho">Trabalho</option>
-                <option value="redacao">Redação/Textos</option>
-            </select>
-
-            <!-- DIFICULDADE -->
-            <select id="dificuldade">
-                <option value="facil">Fácil</option>
-                <option value="medio">Médio</option>
-                <option value="dificil">Difícil</option>
-            </select>
-
-            <button onclick="adicionarTarefa()">Adicionar Tarefa</button>
-
-            <div class="linha" id="semana"></div>
-
-        </div>
-
+        <button onclick="exportarDados()">Exportar</button>
+        <input type="file" onchange="importarDados(event)">
     </div>
 
-</body>
-<script src="script.js"></script>
+    <!-- PLANEJAMENTO -->
+    <div id="telaPlanejamento" style="display:none;">
+        <h2>Planejamento</h2>
 
+        <button onclick="voltarInicio()">⬅ Voltar</button>
+
+        <input type="text" id="entradaTarefa" placeholder="Digite a tarefa">
+        <input type="date" id="dataEntrega">
+
+        <select id="categoria">
+            <option value="pesquisa">Pesquisa</option>
+            <option value="atividades">Atividades</option>
+            <option value="prova">Prova</option>
+            <option value="trabalho">Trabalho</option>
+            <option value="redacao">Redação</option>
+        </select>
+
+        <select id="dificuldade">
+            <option value="facil">Fácil</option>
+            <option value="medio">Médio</option>
+            <option value="dificil">Difícil</option>
+        </select>
+
+        <select id="prioridade">
+            <option value="leve">Leve</option>
+            <option value="normal" selected>Normal</option>
+            <option value="urgente">Urgente</option>
+        </select>
+
+        <button onclick="adicionarTarefa()">Adicionar</button>
+
+        <div class="linha" id="semana"></div>
+    </div>
+
+    <!-- PENDÊNCIAS -->
+    <div id="telaPendencias" style="display:none;">
+        <h2>⚠ Pendências</h2>
+
+        <button onclick="voltarInicio()">⬅ Voltar</button>
+
+        <ul id="listaPendencias"></ul>
+    </div>
+
+</div>
+
+<script src="script.js"></script>
+</body>
 </html>

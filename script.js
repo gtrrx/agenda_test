@@ -1,18 +1,57 @@
 const dias = ["segunda", "terca", "quarta", "quinta", "sexta", "sabado"];
 const LIMITE_TAREFAS_DIA = 3;
 
+// ==========================
+// DATA (COM CACHE)
+// ==========================
+
+function obterDataAtualAPI() {
+    let hoje = new Date();
+    hoje.setHours(0,0,0,0);
+    return Promise.resolve(hoje);
+}
 
 // ==========================
 // DADOS
 // ==========================
 
-function obterDados() {
+async function limparTarefasVencidas(dados) {
+    let hoje = await obterDataAtualAPI();
+    let modificado = false;
+
+    for (let d of dias) {
+        let original = dados[d] || [];
+
+        let filtrado = original.filter(t => {
+            if (!t || !t.entrega) return true;
+            if (t.concluida) return true;
+
+            let entrega = new Date(t.entrega);
+            entrega.setHours(0,0,0,0);
+
+            return entrega >= hoje;
+        });
+
+        if (filtrado.length !== original.length) {
+            dados[d] = filtrado;
+            modificado = true;
+        }
+    }
+
+    return modificado;
+}
+
+async function obterDados() {
     let dados = JSON.parse(localStorage.getItem("planner"));
 
     if (!dados) {
         dados = {};
         dias.forEach(d => dados[d] = []);
     }
+
+    const alterou = await limparTarefasVencidas(dados);
+
+    if (alterou) salvarDados(dados);
 
     return dados;
 }
@@ -21,144 +60,130 @@ function salvarDados(dados) {
     localStorage.setItem("planner", JSON.stringify(dados));
 }
 
-
 // ==========================
-// LÓGICA DE DISTRIBUIÇÃO
+// LÓGICA INTELIGENTE
 // ==========================
 
-function encontrarDiaDisponivel(dados, diaInicial) {
-    let indice = dias.indexOf(diaInicial);
-
-    for (let i = 0; i < dias.length; i++) {
-        let diaAtual = dias[(indice + i) % dias.length];
-
-        if (dados[diaAtual].length < LIMITE_TAREFAS_DIA) {
-            return diaAtual;
-        }
-    }
-
-    return diaInicial;
+function pesoDificuldade(nivel) {
+    return { facil:1, medio:2, dificil:3 }[nivel] || 1;
 }
 
+function pesoPrioridade(p) {
+    return { leve:1, normal:2, urgente:3 }[p] || 2;
+}
+
+function calcularCargaDia(tarefas) {
+    return tarefas.reduce((t, x) =>
+        t + pesoDificuldade(x.dificuldade) + pesoPrioridade(x.prioridade || "normal"), 0);
+}
+
+function escolherMelhorDia(dados, diasDisponiveis, usados) {
+    let melhor = null;
+    let menor = Infinity;
+
+    diasDisponiveis.forEach(dia => {
+        if (usados.includes(dia)) return;
+
+        let tarefas = dados[dia] || [];
+        if (tarefas.length >= LIMITE_TAREFAS_DIA) return;
+
+        let carga = calcularCargaDia(tarefas);
+
+        if (carga < menor) {
+            menor = carga;
+            melhor = dia;
+        }
+    });
+
+    if (!melhor) melhor = diasDisponiveis[0];
+    return melhor;
+}
 
 // ==========================
 // ADICIONAR TAREFA
 // ==========================
 
-function adicionarTarefa() {
-    let input = document.getElementById("entradaTarefa");
-    let texto = input.value.trim();
+async function adicionarTarefa() {
+    let texto = document.getElementById("entradaTarefa").value.trim();
     let dificuldade = document.getElementById("dificuldade").value;
     let categoria = document.getElementById("categoria").value;
+    let prioridade = document.getElementById("prioridade").value;
     let dataEntrega = document.getElementById("dataEntrega").value;
 
     if (!texto || !dataEntrega) return;
 
-    let dados = obterDados();
-
+    let dados = await obterDados();
     let diasDisponiveis = gerarDiasAtePrazo(dataEntrega);
-
-    if (diasDisponiveis.length === 0) {
-        alert("Data de entrega inválida!");
-        return;
-    }
 
     let etapas = [];
 
-    if (categoria === "prova") {
-        etapas = ["Estudar conteúdo", "Fazer exercícios", "Revisão final"];
-    } else if (categoria === "trabalho" || categoria === "redacao") {
+    if (categoria === "prova")
+        etapas = ["Estudo", "Exercícios", "Revisão"];
+    else if (categoria === "trabalho" || categoria === "redacao")
         etapas = ["Pesquisa", "Produção", "Revisão"];
-    } else {
+    else
         etapas = [texto];
-    }
 
-    let indexDia = 0;
+    let usados = [];
 
-    etapas.forEach((etapa, i) => {
+    etapas.forEach(etapa => {
+        let dia;
 
-        let tentativas = 0;
-        let diaEscolhido = null;
+        if (etapa.toLowerCase().includes("revis"))
+            dia = diasDisponiveis[diasDisponiveis.length - 1];
+        else
+            dia = escolherMelhorDia(dados, diasDisponiveis, usados);
 
-        while (tentativas < diasDisponiveis.length) {
-            let dia = diasDisponiveis[indexDia % diasDisponiveis.length];
+        usados.push(dia);
 
-            if (dados[dia].length < LIMITE_TAREFAS_DIA) {
-                diaEscolhido = dia;
-                break;
-            }
-
-            indexDia++;
-            tentativas++;
-        }
-
-        if (!diaEscolhido) {
-            diaEscolhido = diasDisponiveis[i % diasDisponiveis.length];
-        }
-
-        dados[diaEscolhido].push({
-            texto: categoria === "pesquisa" || categoria === "atividades"
-                ? texto
-                : texto + " - " + etapa,
-            categoria: categoria,
-            dificuldade: dificuldade,
+        dados[dia].push({
+            texto: `${texto} - ${etapa}`,
+            categoria,
+            dificuldade,
+            prioridade,
             concluida: false,
             entrega: dataEntrega
         });
-
-        indexDia++;
     });
 
     salvarDados(dados);
-
-    input.value = "";
-    input.focus();
-
+    document.getElementById("entradaTarefa").value = "";
     atualizarTela();
 }
-
 
 // ==========================
 // TELA
 // ==========================
 
-function atualizarTela() {
-    mostrarSemana();
-    mostrarHoje();
+async function atualizarTela() {
+    await mostrarSemana();
+    await mostrarHoje();
 }
 
-function mostrarSemana() {
+async function mostrarSemana() {
     let container = document.getElementById("semana");
     container.innerHTML = "";
 
-    let dados = obterDados();
+    let dados = await obterDados();
 
     dias.forEach(dia => {
         let div = document.createElement("div");
         div.className = "coluna";
 
         let titulo = document.createElement("h4");
-
-        if (dados[dia].length >= LIMITE_TAREFAS_DIA) {
-            titulo.textContent = dia.toUpperCase() + " ⚠";
-        } else {
-            titulo.textContent = dia.toUpperCase();
-        }
+        titulo.textContent = dia.toUpperCase();
 
         let ul = document.createElement("ul");
 
-        dados[dia].forEach((tarefa, index) => {
-            let li = criarItem(tarefa, dia, index);
-            ul.appendChild(li);
+        (dados[dia] || []).forEach((t, i) => {
+            ul.appendChild(criarItem(t, dia, i));
         });
 
         div.appendChild(titulo);
         div.appendChild(ul);
-
         container.appendChild(div);
     });
 }
-
 
 // ==========================
 // ITEM
@@ -167,154 +192,104 @@ function mostrarSemana() {
 function criarItem(tarefa, dia, index) {
     let li = document.createElement("li");
 
-    if (tarefa.concluida) {
-        li.classList.add("concluida");
-    }
-
+    if (tarefa.concluida) li.classList.add("concluida");
     li.classList.add(tarefa.categoria);
 
-    let dataFormatada = new Date(tarefa.entrega).toLocaleDateString("pt-BR");
+    let data = new Date(tarefa.entrega).toLocaleDateString("pt-BR");
 
-    let texto = document.createElement("span");
-    texto.textContent =
-        tarefa.texto + " (" + tarefa.dificuldade + ") - até " + dataFormatada;
-
-    let botoes = document.createElement("div");
-    botoes.className = "botoes";
-
-    let btnCheck = document.createElement("button");
-    btnCheck.textContent = "✔";
-    btnCheck.onclick = () => toggleConcluida(dia, index);
-
-    let btnDel = document.createElement("button");
-    btnDel.textContent = "🗑";
-    btnDel.onclick = () => excluirTarefa(dia, index);
-
-    botoes.appendChild(btnCheck);
-    botoes.appendChild(btnDel);
-
-    li.appendChild(texto);
-    li.appendChild(botoes);
+    li.innerHTML = `
+        <span>${tarefa.texto} (${tarefa.dificuldade}) - até ${data}</span>
+        <div class="botoes">
+            <button onclick="toggleConcluida('${dia}',${index})">✔</button>
+            <button onclick="excluirTarefa('${dia}',${index})">🗑</button>
+        </div>
+    `;
 
     return li;
 }
-
 
 // ==========================
 // AÇÕES
 // ==========================
 
-function toggleConcluida(dia, index) {
-    let dados = obterDados();
+async function toggleConcluida(dia, index) {
+    let dados = await obterDados();
     dados[dia][index].concluida = !dados[dia][index].concluida;
     salvarDados(dados);
     atualizarTela();
 }
 
-function excluirTarefa(dia, index) {
-    let dados = obterDados();
+async function excluirTarefa(dia, index) {
+    let dados = await obterDados();
     dados[dia].splice(index, 1);
     salvarDados(dados);
     atualizarTela();
 }
 
-
 // ==========================
 // HOJE
 // ==========================
 
-function mostrarHoje() {
-    let hoje = new Date().getDay();
+async function mostrarHoje() {
+    let mapa = ["domingo","segunda","terca","quarta","quinta","sexta","sabado"];
+    let hoje = mapa[new Date().getDay()];
 
-    let mapa = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"];
-
-    let diaAtual = mapa[hoje];
-
-    if (diaAtual === "domingo") {
-        diaAtual = "segunda";
-    }
+    if (hoje === "domingo") hoje = "segunda";
 
     document.getElementById("hojeTitulo").textContent =
-        "Hoje você precisa fazer (" + diaAtual.toUpperCase() + ")";
+        `Hoje (${hoje.toUpperCase()})`;
 
     let lista = document.getElementById("listaHoje");
     lista.innerHTML = "";
 
-    let dados = obterDados();
+    let dados = await obterDados();
 
-    if (!dados[diaAtual] || dados[diaAtual].length === 0) {
-        let li = document.createElement("li");
-        li.textContent = "Sem tarefas para hoje 🎉";
-        lista.appendChild(li);
-        return;
-    }
-
-    dados[diaAtual].forEach((tarefa, index) => {
-        let li = criarItem(tarefa, diaAtual, index);
-        lista.appendChild(li);
+    (dados[hoje] || []).forEach((t, i) => {
+        lista.appendChild(criarItem(t, hoje, i));
     });
 }
 
-
 // ==========================
-// BACKUP
+// PENDÊNCIAS
 // ==========================
 
-function exportarDados() {
-    let dados = localStorage.getItem("planner");
+async function mostrarPendencias() {
+    let container = document.getElementById("listaPendencias");
+    container.innerHTML = "";
 
-    if (!dados) {
-        alert("Nenhum dado para exportar!");
-        return;
-    }
+    let dados = await obterDados();
+    let hoje = await obterDataAtualAPI();
 
-    let blob = new Blob([dados], { type: "application/json" });
+    let tarefas = [];
 
-    let link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = "planner.json";
+    dias.forEach(d => {
+        (dados[d] || []).forEach(t => {
+            if (t.concluida) return;
 
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+            let entrega = new Date(t.entrega);
+            entrega.setHours(0,0,0,0);
+
+            let diff = (entrega - hoje)/(1000*60*60*24);
+
+            if (diff <= 2) tarefas.push({...t, diff});
+        });
+    });
+
+    tarefas.sort((a,b)=> new Date(a.entrega)-new Date(b.entrega));
+
+    tarefas.forEach(t => {
+        let li = document.createElement("li");
+
+        if (t.diff <= 0) li.classList.add("urgente");
+        else if (t.diff === 1) li.classList.add("alerta");
+
+        li.textContent = `${t.texto} - até ${new Date(t.entrega).toLocaleDateString("pt-BR")}`;
+        container.appendChild(li);
+    });
 }
 
-function importarDados(event) {
-    let arquivo = event.target.files[0];
-    if (!arquivo) return;
-
-    let leitor = new FileReader();
-
-    leitor.onload = function (e) {
-        localStorage.setItem("planner", e.target.result);
-        atualizarTela();
-    };
-
-    leitor.readAsText(arquivo);
-}
-
-
 // ==========================
-// TEMA
-// ==========================
-
-function toggleTema() {
-    document.body.classList.toggle("dark");
-
-    let tema = document.body.classList.contains("dark") ? "dark" : "light";
-    localStorage.setItem("tema", tema);
-}
-
-(function () {
-    let tema = localStorage.getItem("tema");
-    if (tema === "dark") {
-        document.body.classList.add("dark");
-    }
-})();
-
-
-// ==========================
-// TELAS
+// NAVEGAÇÃO
 // ==========================
 
 function abrirPlanejamento() {
@@ -323,12 +298,18 @@ function abrirPlanejamento() {
     atualizarTela();
 }
 
+function abrirPendencias() {
+    document.getElementById("telaPrincipal").style.display = "none";
+    document.getElementById("telaPendencias").style.display = "block";
+    mostrarPendencias();
+}
+
 function voltarInicio() {
     document.getElementById("telaPrincipal").style.display = "block";
     document.getElementById("telaPlanejamento").style.display = "none";
+    document.getElementById("telaPendencias").style.display = "none";
     mostrarHoje();
 }
-
 
 // ==========================
 // PRAZO
@@ -338,31 +319,63 @@ function gerarDiasAtePrazo(dataEntrega) {
     let hoje = new Date();
     let prazo = new Date(dataEntrega);
 
-    let listaDias = [];
+    let lista = [];
 
     while (hoje <= prazo) {
-        let diaSemana = hoje.getDay();
+        let mapa = ["domingo","segunda","terca","quarta","quinta","sexta","sabado"];
+        let dia = mapa[hoje.getDay()];
 
-        let mapa = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"];
-
-        let dia = mapa[diaSemana];
-
-        if (dia !== "domingo") {
-            listaDias.push(dia);
-        }
+        if (dia !== "domingo") lista.push(dia);
 
         hoje.setDate(hoje.getDate() + 1);
     }
 
-    return listaDias;
+    return lista;
 }
 
+// ==========================
+// OUTROS
+// ==========================
+
+function exportarDados() {
+    let dados = localStorage.getItem("planner");
+
+    let blob = new Blob([dados], { type: "application/json" });
+    let link = document.createElement("a");
+
+    link.href = URL.createObjectURL(blob);
+    link.download = "planner.json";
+    link.click();
+}
+
+function importarDados(e) {
+    let file = e.target.files[0];
+    let reader = new FileReader();
+
+    reader.onload = () => {
+        localStorage.setItem("planner", reader.result);
+        atualizarTela();
+    };
+
+    reader.readAsText(file);
+}
+
+function toggleTema() {
+    document.body.classList.toggle("dark");
+    localStorage.setItem("tema", document.body.classList.contains("dark") ? "dark" : "light");
+}
+
+(function () {
+    if (localStorage.getItem("tema") === "dark") {
+        document.body.classList.add("dark");
+    }
+})();
 
 // ==========================
 // INIT
 // ==========================
 
-window.onload = function () {
+window.onload = () => {
     atualizarTela();
 
     let hoje = new Date().toISOString().split("T")[0];
