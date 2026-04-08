@@ -1,74 +1,182 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <title>Planner Inteligente</title>
 </head>
 
 <body>
 
-<div class="container">
+    <div class="app-shell">
 
-    <!-- TELA PRINCIPAL -->
-    <div id="telaPrincipal">
-        <h2 id="hojeTitulo"></h2>
-        <ul id="listaHoje"></ul>
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="logo">
+                <span class="logo-icon">◈</span>
+                <span class="logo-text">Planner</span>
+            </div>
 
-        <button onclick="abrirPlanejamento()">📅 Planejamento</button>
-        <button onclick="abrirPendencias()">⚠ Pendências</button>
-        <button onclick="toggleTema()">🌙 Tema</button>
+            <nav class="nav-menu">
+                <button class="nav-item active" id="nav-hoje" onclick="irParaHoje()">
+                    <span class="nav-icon">☀</span>
+                    <span>Hoje</span>
+                </button>
+                <button class="nav-item" id="nav-planejamento" onclick="abrirPlanejamento()">
+                    <span class="nav-icon">✦</span>
+                    <span>Planejamento</span>
+                </button>
+                <button class="nav-item" id="nav-semana" onclick="abrirSemana()">
+                    <span class="nav-icon">⊞</span>
+                    <span>Minha Semana</span>
+                </button>
+                <button class="nav-item" id="nav-pendencias" onclick="abrirPendencias()">
+                    <span class="nav-icon">⚡</span>
+                    <span>Pendências</span>
+                    <span class="badge" id="badgePendencias"></span>
+                </button>
+            </nav>
 
-        <button onclick="exportarDados()">Exportar</button>
-        <input type="file" onchange="importarDados(event)">
+            <div class="sidebar-footer">
+                <button class="btn-tema" onclick="toggleTema()" title="Alternar tema">
+                    <span id="temaIcon">🌙</span>
+                </button>
+                <button class="btn-exportar" onclick="exportarDados()" title="Exportar dados">
+                    <span>↑</span>
+                </button>
+                <label class="btn-importar" title="Importar dados">
+                    <span>↓</span>
+                    <input type="file" onchange="importarDados(event)" style="display:none">
+                </label>
+            </div>
+        </aside>
+
+        <!-- CONTEÚDO PRINCIPAL -->
+        <main class="main-content">
+
+            <!-- TELA HOJE -->
+            <section id="telaPrincipal" class="tela ativa">
+                <div class="tela-header">
+                    <div>
+                        <p class="tela-subtitulo">Bom trabalho! Aqui estão suas</p>
+                        <h1 class="tela-titulo" id="hojeTitulo">tarefas de hoje</h1>
+                    </div>
+                    <div class="progresso-circulo" id="progressoCirculo">
+                        <svg viewBox="0 0 36 36">
+                            <path class="circulo-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                            <path class="circulo-fill" id="circuloFill" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                        </svg>
+                        <span class="progresso-pct" id="progressoPct">0%</span>
+                    </div>
+                </div>
+
+                <div class="lista-vazia" id="vazioHoje" style="display:none;">
+                    <span class="emoji-vazio">🌿</span>
+                    <p>Sem tarefas para hoje. Aproveite!</p>
+                </div>
+
+                <ul class="lista-tarefas" id="listaHoje"></ul>
+            </section>
+
+            <!-- TELA PLANEJAMENTO -->
+            <section id="telaPlanejamento" class="tela">
+                <div class="tela-header">
+                    <div>
+                        <p class="tela-subtitulo">Adicione uma nova</p>
+                        <h1 class="tela-titulo">tarefa ao planner</h1>
+                    </div>
+                </div>
+
+                <div class="form-card">
+                    <div class="form-grupo">
+                        <label class="form-label">Nome da tarefa</label>
+                        <input type="text" id="entradaTarefa" class="form-input" placeholder="Ex: Estudar para prova de matemática">
+                    </div>
+
+                    <div class="form-linha">
+                        <div class="form-grupo">
+                            <label class="form-label">Data de entrega</label>
+                            <input type="date" id="dataEntrega" class="form-input">
+                        </div>
+                        <div class="form-grupo">
+                            <label class="form-label">Categoria</label>
+                            <select id="categoria" class="form-input">
+                                <option value="pesquisa">🔍 Pesquisa</option>
+                                <option value="atividades">📝 Atividades</option>
+                                <option value="prova">📚 Prova</option>
+                                <option value="trabalho">💼 Trabalho</option>
+                                <option value="redacao">✍ Redação</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-linha">
+                        <div class="form-grupo">
+                            <label class="form-label">Dificuldade</label>
+                            <div class="opcoes-grupo" id="opcoesDificuldade">
+                                <button class="opcao-btn" data-val="facil" onclick="selecionarOpcao(this,'dificuldade')">Fácil</button>
+                                <button class="opcao-btn ativo" data-val="medio" onclick="selecionarOpcao(this,'dificuldade')">Médio</button>
+                                <button class="opcao-btn" data-val="dificil" onclick="selecionarOpcao(this,'dificuldade')">Difícil</button>
+                            </div>
+                            <input type="hidden" id="dificuldade" value="medio">
+                        </div>
+                        <div class="form-grupo">
+                            <label class="form-label">Prioridade</label>
+                            <div class="opcoes-grupo" id="opcoesPrioridade">
+                                <button class="opcao-btn" data-val="leve" onclick="selecionarOpcao(this,'prioridade')">Leve</button>
+                                <button class="opcao-btn ativo" data-val="normal" onclick="selecionarOpcao(this,'prioridade')">Normal</button>
+                                <button class="opcao-btn urgente-btn" data-val="urgente" onclick="selecionarOpcao(this,'prioridade')">Urgente</button>
+                            </div>
+                            <input type="hidden" id="prioridade" value="normal">
+                        </div>
+                    </div>
+
+                    <button class="btn-primario" onclick="adicionarTarefa()">
+                        <span>+</span> Adicionar Tarefa
+                    </button>
+                </div>
+            </section>
+
+            <!-- TELA SEMANA -->
+            <section id="telaSemana" class="tela">
+                <div class="tela-header">
+                    <div>
+                        <p class="tela-subtitulo">Visão geral da</p>
+                        <h1 class="tela-titulo">sua semana</h1>
+                    </div>
+                </div>
+                <div class="grade-semana" id="semana"></div>
+            </section>
+
+            <!-- TELA PENDÊNCIAS -->
+            <section id="telaPendencias" class="tela">
+                <div class="tela-header">
+                    <div>
+                        <p class="tela-subtitulo">Atenção às tarefas</p>
+                        <h1 class="tela-titulo">com prazo próximo</h1>
+                    </div>
+                </div>
+
+                <div class="lista-vazia" id="vazioPendencias" style="display:none;">
+                    <span class="emoji-vazio">✅</span>
+                    <p>Nenhuma pendência urgente. Ótimo!</p>
+                </div>
+
+                <ul class="lista-tarefas" id="listaPendencias"></ul>
+            </section>
+
+        </main>
     </div>
 
-    <!-- PLANEJAMENTO -->
-    <div id="telaPlanejamento" style="display:none;">
-        <h2>Planejamento</h2>
+    <!-- TOAST -->
+    <div class="toast" id="toast"></div>
 
-        <button onclick="voltarInicio()">⬅ Voltar</button>
-
-        <input type="text" id="entradaTarefa" placeholder="Digite a tarefa">
-        <input type="date" id="dataEntrega">
-
-        <select id="categoria">
-            <option value="pesquisa">Pesquisa</option>
-            <option value="atividades">Atividades</option>
-            <option value="prova">Prova</option>
-            <option value="trabalho">Trabalho</option>
-            <option value="redacao">Redação</option>
-        </select>
-
-        <select id="dificuldade">
-            <option value="facil">Fácil</option>
-            <option value="medio">Médio</option>
-            <option value="dificil">Difícil</option>
-        </select>
-
-        <select id="prioridade">
-            <option value="leve">Leve</option>
-            <option value="normal" selected>Normal</option>
-            <option value="urgente">Urgente</option>
-        </select>
-
-        <button onclick="adicionarTarefa()">Adicionar</button>
-
-        <div class="linha" id="semana"></div>
-    </div>
-
-    <!-- PENDÊNCIAS -->
-    <div id="telaPendencias" style="display:none;">
-        <h2>⚠ Pendências</h2>
-
-        <button onclick="voltarInicio()">⬅ Voltar</button>
-
-        <ul id="listaPendencias"></ul>
-    </div>
-
-</div>
-
-<script src="script.js"></script>
+    <script src="script.js"></script>
 </body>
+
 </html>
